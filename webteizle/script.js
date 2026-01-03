@@ -18,23 +18,29 @@ async function searchResults(keyword) {
     try {
         const encodedKeyword = encodeURIComponent(keyword);
 
-        const responseText = await soraFetch(`${BASE_URL}/ajax/arama.asp`, {
+        const response = await soraFetch(`${BASE_URL}/ajax/arama.asp`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
                 'X-Requested-With': 'XMLHttpRequest',
-                'Referer': BASE_URL
+                'Referer': `${BASE_URL}/`,
+                'Origin': BASE_URL,
+                'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1',
+                'Accept': 'application/json, text/javascript, */*; q=0.01',
+                'Accept-Language': 'tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7'
             },
             body: `q=${encodedKeyword}`
         });
 
-        if (!responseText) {
+        if (!response || response.status === 0) {
+            console.log('Search: No response');
             return JSON.stringify([]);
         }
 
-        const data = JSON.parse(responseText);
+        const data = await response.json();
 
-        if (data.status !== "OK" || !data.results) {
+        if (!data || data.status !== "OK" || !data.results) {
+            console.log('Search: Invalid data');
             return JSON.stringify([]);
         }
 
@@ -96,14 +102,28 @@ async function extractDetails(url) {
             });
         }
 
-        const responseText = await soraFetch(`${BASE_URL}/_ajaxweb/sol/hakkinda/${slug}`, {
+        const response = await soraFetch(`${BASE_URL}/_ajaxweb/sol/hakkinda/${slug}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
                 'X-Requested-With': 'XMLHttpRequest',
-                'Referer': `${BASE_URL}/hakkinda/${slug}`
+                'Referer': `${BASE_URL}/hakkinda/${slug}`,
+                'Origin': BASE_URL,
+                'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1',
+                'Accept': 'text/html, */*; q=0.01',
+                'Accept-Language': 'tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7'
             }
         });
+
+        if (!response || response.status === 0) {
+            return JSON.stringify({
+                description: 'Detaylar yüklenemedi',
+                aliases: '',
+                airdate: ''
+            });
+        }
+
+        const responseText = await response.text();
 
         if (!responseText) {
             return JSON.stringify({
@@ -172,14 +192,24 @@ async function extractEpisodes(url) {
             return JSON.stringify([]);
         }
 
-        const responseText = await soraFetch(`${BASE_URL}/_ajaxweb/sol/hakkinda/${slug}`, {
+        const response = await soraFetch(`${BASE_URL}/_ajaxweb/sol/hakkinda/${slug}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
                 'X-Requested-With': 'XMLHttpRequest',
-                'Referer': `${BASE_URL}/hakkinda/${slug}`
+                'Referer': `${BASE_URL}/hakkinda/${slug}`,
+                'Origin': BASE_URL,
+                'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1',
+                'Accept': 'text/html, */*; q=0.01',
+                'Accept-Language': 'tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7'
             }
         });
+
+        if (!response || response.status === 0) {
+            return JSON.stringify([]);
+        }
+
+        const responseText = await response.text();
 
         if (!responseText) {
             return JSON.stringify([]);
@@ -961,6 +991,7 @@ function cleanHtml(text) {
 
 /**
  * Fetch function with Sora compatibility
+ * Returns a Response-like object with .json() and .text() methods
  */
 async function soraFetch(url, options = {}) {
     const defaultOptions = {
@@ -972,8 +1003,14 @@ async function soraFetch(url, options = {}) {
     const opts = { ...defaultOptions, ...options };
 
     try {
-        // Try Sora's fetchv2 first
-        return await fetchv2(url, opts.headers, opts.method, opts.body);
+        // Try Sora's fetchv2 first (returns text)
+        const text = await fetchv2(url, opts.headers, opts.method, opts.body);
+        // Create Response-like object
+        return {
+            status: 200,
+            text: async () => text,
+            json: async () => JSON.parse(text)
+        };
     } catch (e) {
         try {
             // Fallback to native fetch
@@ -984,11 +1021,15 @@ async function soraFetch(url, options = {}) {
             if (opts.body) {
                 fetchOptions.body = opts.body;
             }
-            const response = await fetch(url, fetchOptions);
-            return await response.text();
+            return await fetch(url, fetchOptions);
         } catch (error) {
             console.log('soraFetch error: ' + error);
-            return null;
+            return {
+                status: 0,
+                text: async () => null,
+                json: async () => null
+            };
         }
     }
 }
+
