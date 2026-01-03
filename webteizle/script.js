@@ -991,45 +991,24 @@ function cleanHtml(text) {
 
 /**
  * Fetch function with Sora compatibility
- * Returns a Response-like object with .json() and .text() methods
+ * Uses Sunduq's exact pattern with fetchv2's 5th parameter = true
  */
-async function soraFetch(url, options = {}) {
-    const defaultOptions = {
-        headers: {},
-        method: 'GET',
-        body: null
-    };
-
-    const opts = { ...defaultOptions, ...options };
-
+async function soraFetch(url, options = { headers: {}, method: 'GET', body: null, encoding: 'utf-8' }) {
     try {
-        // Try Sora's fetchv2 first (returns text)
-        const text = await fetchv2(url, opts.headers, opts.method, opts.body);
-        // Create Response-like object
-        return {
-            status: 200,
-            text: async () => text,
-            json: async () => JSON.parse(text)
-        };
+        return await fetchv2(
+            url,
+            options.headers ?? {},
+            options.method ?? 'GET',
+            options.body ?? null,
+            true,
+            options.encoding ?? 'utf-8'
+        );
     } catch (e) {
         try {
-            // Fallback to native fetch
-            const fetchOptions = {
-                method: opts.method,
-                headers: opts.headers
-            };
-            if (opts.body) {
-                fetchOptions.body = opts.body;
-            }
-            return await fetch(url, fetchOptions);
+            return await fetch(url, options);
         } catch (error) {
             console.log('soraFetch error: ' + error);
-            return {
-                status: 0,
-                text: async () => null,
-                json: async () => null
-            };
+            return null;
         }
     }
 }
-
