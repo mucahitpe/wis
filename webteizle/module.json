@@ -1,18 +1,18 @@
 {
-    "sourceName": "WebTeizle",
+    "sourceName": "WIS",
     "iconUrl": "https://webteizle3.xyz/favicon.ico",
     "author": {
-        "name": "mucahit",
+        "name": "mucahitpe",
         "icon": "👨‍💻"
     },
     "version": "1.0.0",
     "language": "Turkish",
-    "description": "WebTeizle - Türkçe dublaj ve altyazılı film izleme",
+    "description": "Türkçe dublaj ve altyazılı film izleme",
     "streamType": "HLS",
     "quality": "1080p",
     "baseUrl": "https://webteizle3.xyz",
     "searchBaseUrl": "https://webteizle3.xyz/ajax/arama.asp?q=%s",
-    "scriptUrl": "https://raw.githubusercontent.com/YOUR_USERNAME/YOUR_REPO/main/webteizle/script.js",
+    "scriptUrl": "https://raw.githubusercontent.com/mucahitpe/wis/main/webteizle/script.js",
     "type": "movies",
     "downloadSupport": false,
     "asyncJS": true,
